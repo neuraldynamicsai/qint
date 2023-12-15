@@ -3,7 +3,7 @@ from functools import total_ordering
 
 import qint.utils as ut
 from .utils import Number
-from .exceptions import QIntPrecisionError
+from .exceptions import QIntPrecisionError, QIntTypeError, QIntMutationError
 
 
 @total_ordering
@@ -59,10 +59,10 @@ class QInt(NamedTuple):
             # simple scalar addition
             return QInt(self.value + other, self.precision)
         else:
-            raise ValueError(f"Cannot add QInt with {type(other)}")
+            raise QIntTypeError(other)
 
     def __iadd__(self, _: Self | int) -> Self:
-        raise TypeError("Instances of QInt are immutable")
+        raise QIntMutationError()
 
     def __sub__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
@@ -73,10 +73,10 @@ class QInt(NamedTuple):
             # simple scalar subtraction
             return QInt(self.value - other, self.precision)
         else:
-            raise ValueError(f"Cannot subtract QInt with {type(other)}")
+            raise QIntTypeError(other)
 
     def __isub__(self, _: Self | int) -> Self:
-        raise TypeError("Instances of QInt are immutable")
+        raise QIntMutationError()
 
     def __mul__(self, other: Self | Number) -> Self:
         if isinstance(other, QInt):
@@ -87,10 +87,10 @@ class QInt(NamedTuple):
             # simple scalar multiplication
             return QInt(ut.int_mul(self.value, other), self.precision)
         else:
-            raise ValueError(f"Cannot multiply QInt with {type(other)}")
+            raise QIntTypeError(other)
 
     def __imul__(self, _: Self | Number) -> Self:
-        raise TypeError("Instances of QInt are immutable")
+        raise QIntMutationError()
 
     def __truediv__(self, other: Self | Number) -> Self:
         if isinstance(other, QInt):
@@ -101,10 +101,10 @@ class QInt(NamedTuple):
             # simple scalar division
             return QInt(ut.int_div(self.value, other), self.precision)
         else:
-            raise ValueError(f"Cannot divide QInt with {type(other)}")
+            raise QIntTypeError(other)
 
     def __itruediv__(self, _: Self | Number) -> Self:
-        raise TypeError("Instances of QInt are immutable")
+        raise QIntMutationError()
 
     def __floordiv__(self, _: Self | Number) -> Self:
         raise TypeError("Floor division is not supported for instances of QInt")
@@ -145,7 +145,7 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, __value.precision)
             return self.value == __value.value
         else:
-            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+            raise QIntTypeError(__value)
 
     def __ne__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
@@ -153,7 +153,7 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, __value.precision)
             return self.value != __value.value
         else:
-            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+            raise QIntTypeError(__value)
 
     def __gt__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
@@ -161,7 +161,7 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, __value.precision)
             return self.value > __value.value
         else:
-            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+            raise QIntTypeError(__value)
 
     def __ge__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
@@ -169,7 +169,7 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, __value.precision)
             return self.value >= __value.value
         else:
-            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+            raise QIntTypeError(__value)
 
     def __lt__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
@@ -177,7 +177,7 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, __value.precision)
             return self.value < __value.value
         else:
-            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+            raise QIntTypeError(__value)
 
     def __le__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
@@ -185,4 +185,4 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, __value.precision)
             return self.value <= __value.value
         else:
-            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+            raise QIntTypeError(__value)
