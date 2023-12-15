@@ -1,22 +1,16 @@
-from dataclasses import dataclass, field
-from typing import Union, Callable, NamedTuple, Self
+from typing import NamedTuple, Self
 from functools import total_ordering
 
-import numpy as np
-
 import qint.utils as ut
-
-Integer = np.integer | int
-Float = np.floating | float
-Number = Integer | Float
+from .utils import Number
 
 
 @total_ordering
 class QInt(NamedTuple):
     """
-    Class for representing quantized integers. The value is stored as an integer, but
-    the true value is calculated by dividing the integer by 10^precision. This allows
-    for exact arithmetic on the quantized integers.
+    Class for representing quantized integers. The value is stored as an
+    integer, but the true value is calculated by dividing the integer by
+    10^precision. This allows for exact arithmetic on the quantized integers.
 
     NOTE: You can access the true value via the `true_value` property.
 
@@ -40,11 +34,11 @@ class QInt(NamedTuple):
     :param precision: precision of the quantized value
     """
 
-    value: np.int64
+    value: int
     precision: int
 
     @property
-    def true_value(self) -> np.float64:
+    def true_value(self) -> float:
         """True unquantized value"""
         return ut.unquantize(self.value, self.precision)
 
@@ -55,7 +49,7 @@ class QInt(NamedTuple):
             raise ValueError(f"Value must be a number, not {type(value)}")
         return cls(ut.quantize(value, precision), precision)
 
-    def __add__(self, other: Self | Integer) -> Self:
+    def __add__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
                 raise ValueError(
@@ -63,21 +57,21 @@ class QInt(NamedTuple):
                     f"QInt(precision={other.precision})"
                 )
             return QInt(self.value + other.value, self.precision)
-        elif isinstance(other, Integer):
+        elif isinstance(other, int):
             # simple scalar addition
             return QInt(self.value + other, self.precision)
         else:
             raise ValueError(f"Cannot add QInt with {type(other)}")
 
-    def __sub__(self, other: Self | Integer) -> Self:
+    def __sub__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
                 raise ValueError(
-                    f"""Cannot subtract QInt(precision={self.precision}) with
-                    QInt(precision={other.precision})"""
+                    f"Cannot subtract QInt(precision={self.precision}) with"
+                    f"QInt(precision={other.precision})"
                 )
             return QInt(self.value - other.value, self.precision)
-        elif isinstance(other, Integer):
+        elif isinstance(other, int):
             # simple scalar subtraction
             return QInt(self.value - other, self.precision)
         else:
