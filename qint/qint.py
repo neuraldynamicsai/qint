@@ -63,6 +63,9 @@ class QInt(NamedTuple):
         else:
             raise ValueError(f"Cannot add QInt with {type(other)}")
 
+    def __iadd__(self, _: Self | int) -> Self:
+        raise TypeError("Instances of QInt are immutable")
+
     def __sub__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
@@ -76,6 +79,9 @@ class QInt(NamedTuple):
             return QInt(self.value - other, self.precision)
         else:
             raise ValueError(f"Cannot subtract QInt with {type(other)}")
+
+    def __isub__(self, _: Self | int) -> Self:
+        raise TypeError("Instances of QInt are immutable")
 
     def __mul__(self, other: Self | Number) -> Self:
         if isinstance(other, QInt):
@@ -91,6 +97,9 @@ class QInt(NamedTuple):
         else:
             raise ValueError(f"Cannot multiply QInt with {type(other)}")
 
+    def __imul__(self, _: Self | Number) -> Self:
+        raise TypeError("Instances of QInt are immutable")
+
     def __truediv__(self, other: Self | Number) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
@@ -105,6 +114,42 @@ class QInt(NamedTuple):
         else:
             raise ValueError(f"Cannot divide QInt with {type(other)}")
 
+    def __itruediv__(self, _: Self | Number) -> Self:
+        raise TypeError("Instances of QInt are immutable")
+
+    def __floordiv__(self, _: Self | Number) -> Self:
+        raise TypeError("Floor division is not supported for instances of QInt")
+
+    def __mod__(self, _: Self | Number) -> Self:
+        raise TypeError("Modulo is not supported for instances of QInt")
+
+    def __pow__(self, _: Self | Number) -> Self:
+        raise TypeError("Exponentiation is not supported for instances of QInt")
+
+    def __and__(self, _: Self | Number) -> Self:
+        raise TypeError("Bitwise AND is not supported for instances of QInt")
+
+    def __or__(self, _: Self | Number) -> Self:
+        raise TypeError("Bitwise OR is not supported for instances of QInt")
+
+    def __xor__(self, _: Self | Number) -> Self:
+        raise TypeError("Bitwise XOR is not supported for instances of QInt")
+
+    def __lshift__(self, _: Self | Number) -> Self:
+        raise TypeError("Bitwise left shift is not supported for instances of QInt")
+
+    def __rshift__(self, _: Self | Number) -> Self:
+        raise TypeError("Bitwise right shift is not supported for instances of QInt")
+
+    def __neg__(self) -> Self:
+        return QInt(-self.value, self.precision)
+
+    def __pos__(self) -> Self:
+        return QInt(self.value, self.precision)
+
+    def __abs__(self) -> Self:
+        return QInt(abs(self.value), self.precision)
+
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
@@ -116,6 +161,17 @@ class QInt(NamedTuple):
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
 
+    def __ne__(self, __value: object) -> bool:
+        if isinstance(__value, QInt):
+            if self.precision != __value.precision:
+                raise ValueError(
+                    f"Cannot compare QInt(precision={self.precision}) "
+                    f"with QInt(precision={__value.precision})"
+                )
+            return self.value != __value.value
+        else:
+            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+
     def __gt__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
@@ -124,5 +180,38 @@ class QInt(NamedTuple):
                     f"with QInt(precision={__value.precision})"
                 )
             return self.value > __value.value
+        else:
+            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+
+    def __ge__(self, __value: object) -> bool:
+        if isinstance(__value, QInt):
+            if self.precision != __value.precision:
+                raise ValueError(
+                    f"Cannot compare QInt(precision={self.precision}) "
+                    f"with QInt(precision={__value.precision})"
+                )
+            return self.value >= __value.value
+        else:
+            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+
+    def __lt__(self, __value: object) -> bool:
+        if isinstance(__value, QInt):
+            if self.precision != __value.precision:
+                raise ValueError(
+                    f"Cannot compare QInt(precision={self.precision}) "
+                    f"with QInt(precision={__value.precision})"
+                )
+            return self.value < __value.value
+        else:
+            raise TypeError(f"Cannot compare QInt with {type(__value)}")
+
+    def __le__(self, __value: object) -> bool:
+        if isinstance(__value, QInt):
+            if self.precision != __value.precision:
+                raise ValueError(
+                    f"Cannot compare QInt(precision={self.precision}) "
+                    f"with QInt(precision={__value.precision})"
+                )
+            return self.value <= __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
