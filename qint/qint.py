@@ -3,6 +3,7 @@ from functools import total_ordering
 
 import qint.utils as ut
 from .utils import Number
+from .exceptions import QIntPrecisionError
 
 
 @total_ordering
@@ -52,10 +53,7 @@ class QInt(NamedTuple):
     def __add__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
-                raise ValueError(
-                    f"Cannot add QInt(precision={self.precision}) with "
-                    f"QInt(precision={other.precision})"
-                )
+                raise QIntPrecisionError(self.precision, other.precision)
             return QInt(self.value + other.value, self.precision)
         elif isinstance(other, int):
             # simple scalar addition
@@ -69,10 +67,7 @@ class QInt(NamedTuple):
     def __sub__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
-                raise ValueError(
-                    f"Cannot subtract QInt(precision={self.precision}) with"
-                    f"QInt(precision={other.precision})"
-                )
+                raise QIntPrecisionError(self.precision, other.precision)
             return QInt(self.value - other.value, self.precision)
         elif isinstance(other, int):
             # simple scalar subtraction
@@ -86,10 +81,7 @@ class QInt(NamedTuple):
     def __mul__(self, other: Self | Number) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
-                raise ValueError(
-                    f"Cannot multiply QInt(precision={self.precision}) with "
-                    f"QInt(precision={other.precision})"
-                )
+                raise QIntPrecisionError(self.precision, other.precision)
             return QInt(self.value * other.value, self.precision)
         elif isinstance(other, Number):
             # simple scalar multiplication
@@ -103,10 +95,7 @@ class QInt(NamedTuple):
     def __truediv__(self, other: Self | Number) -> Self:
         if isinstance(other, QInt):
             if self.precision != other.precision:
-                raise ValueError(
-                    f"Cannot divide QInt(precision={self.precision}) with "
-                    f"QInt(precision={other.precision})"
-                )
+                raise QIntPrecisionError(self.precision, other.precision)
             return QInt(ut.int_div(self.value, other.value), self.precision)
         elif isinstance(other, Number):
             # simple scalar division
@@ -153,10 +142,7 @@ class QInt(NamedTuple):
     def __eq__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
-                raise ValueError(
-                    f"Cannot compare QInt(precision={self.precision}) "
-                    f"with QInt(precision={__value.precision})"
-                )
+                raise QIntPrecisionError(self.precision, __value.precision)
             return self.value == __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
@@ -164,10 +150,7 @@ class QInt(NamedTuple):
     def __ne__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
-                raise ValueError(
-                    f"Cannot compare QInt(precision={self.precision}) "
-                    f"with QInt(precision={__value.precision})"
-                )
+                raise QIntPrecisionError(self.precision, __value.precision)
             return self.value != __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
@@ -175,10 +158,7 @@ class QInt(NamedTuple):
     def __gt__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
-                raise ValueError(
-                    f"Cannot compare QInt(precision={self.precision}) "
-                    f"with QInt(precision={__value.precision})"
-                )
+                raise QIntPrecisionError(self.precision, __value.precision)
             return self.value > __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
@@ -186,10 +166,7 @@ class QInt(NamedTuple):
     def __ge__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
-                raise ValueError(
-                    f"Cannot compare QInt(precision={self.precision}) "
-                    f"with QInt(precision={__value.precision})"
-                )
+                raise QIntPrecisionError(self.precision, __value.precision)
             return self.value >= __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
@@ -197,10 +174,7 @@ class QInt(NamedTuple):
     def __lt__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
-                raise ValueError(
-                    f"Cannot compare QInt(precision={self.precision}) "
-                    f"with QInt(precision={__value.precision})"
-                )
+                raise QIntPrecisionError(self.precision, __value.precision)
             return self.value < __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
@@ -208,10 +182,7 @@ class QInt(NamedTuple):
     def __le__(self, __value: object) -> bool:
         if isinstance(__value, QInt):
             if self.precision != __value.precision:
-                raise ValueError(
-                    f"Cannot compare QInt(precision={self.precision}) "
-                    f"with QInt(precision={__value.precision})"
-                )
+                raise QIntPrecisionError(self.precision, __value.precision)
             return self.value <= __value.value
         else:
             raise TypeError(f"Cannot compare QInt with {type(__value)}")
