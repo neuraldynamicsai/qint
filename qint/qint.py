@@ -6,6 +6,17 @@ from .utils import Number
 from .exceptions import QIntPrecisionError, QIntTypeError, QIntMutationError
 
 
+def check_qint(method):
+    def wrapper(self, other):
+        if not isinstance(other, QInt):
+            raise QIntTypeError(other)
+        if self.precision != other.precision:
+            raise QIntPrecisionError(self.precision, other.precision)
+        return method(self, other)
+
+    return wrapper
+
+
 @total_ordering
 class QInt(NamedTuple):
     """
@@ -153,50 +164,26 @@ class QInt(NamedTuple):
     def __abs__(self) -> Self:
         return QInt(abs(self.value), self.precision)
 
-    def __eq__(self, __value: object) -> bool:
-        if isinstance(__value, QInt):
-            if self.precision != __value.precision:
-                raise QIntPrecisionError(self.precision, __value.precision)
-            return self.value == __value.value
-        else:
-            raise QIntTypeError(__value)
+    @check_qint
+    def __eq__(self, __value: Self) -> bool:
+        return self.value == __value.value
 
-    def __ne__(self, __value: object) -> bool:
-        if isinstance(__value, QInt):
-            if self.precision != __value.precision:
-                raise QIntPrecisionError(self.precision, __value.precision)
-            return self.value != __value.value
-        else:
-            raise QIntTypeError(__value)
+    @check_qint
+    def __ne__(self, __value: Self) -> bool:
+        return self.value != __value.value
 
-    def __gt__(self, __value: object) -> bool:
-        if isinstance(__value, QInt):
-            if self.precision != __value.precision:
-                raise QIntPrecisionError(self.precision, __value.precision)
-            return self.value > __value.value
-        else:
-            raise QIntTypeError(__value)
+    @check_qint
+    def __gt__(self, __value: Self) -> bool:
+        return self.value > __value.value
 
-    def __ge__(self, __value: object) -> bool:
-        if isinstance(__value, QInt):
-            if self.precision != __value.precision:
-                raise QIntPrecisionError(self.precision, __value.precision)
-            return self.value >= __value.value
-        else:
-            raise QIntTypeError(__value)
+    @check_qint
+    def __ge__(self, __value: Self) -> bool:
+        return self.value >= __value.value
 
-    def __lt__(self, __value: object) -> bool:
-        if isinstance(__value, QInt):
-            if self.precision != __value.precision:
-                raise QIntPrecisionError(self.precision, __value.precision)
-            return self.value < __value.value
-        else:
-            raise QIntTypeError(__value)
+    @check_qint
+    def __lt__(self, __value: Self) -> bool:
+        return self.value < __value.value
 
-    def __le__(self, __value: object) -> bool:
-        if isinstance(__value, QInt):
-            if self.precision != __value.precision:
-                raise QIntPrecisionError(self.precision, __value.precision)
-            return self.value <= __value.value
-        else:
-            raise QIntTypeError(__value)
+    @check_qint
+    def __le__(self, __value: Self) -> bool:
+        return self.value <= __value.value
