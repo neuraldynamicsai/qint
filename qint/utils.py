@@ -75,3 +75,21 @@ def int_floordiv(num: int, denom: Number, precision: int) -> int:
     adjusted_num = num / (10**precision)
 
     return _int_round(adjusted_num / denom)
+
+
+@check_arguments([(int, "numerator"), (Number, "denominator"), (int, "precision")])
+def int_mod(num: int, denom: Number, precision: int) -> int:
+    """
+    Modulo operation for quantized integers, considering precision.
+
+    :param num: The numerator, an integer representing the quantized value.
+    :param denom: The denominator, can be any number type.
+    :param precision: The precision of the quantized value.
+    :return: The result of the modulo operation as a quantized integer.
+    """
+    if denom == 0:
+        raise ZeroDivisionError("Denominator cannot be zero")
+
+    adjusted_denom = denom * (10**precision)
+
+    return num % adjusted_denom

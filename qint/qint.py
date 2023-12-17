@@ -56,7 +56,6 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, other.precision)
             return QInt(self.value + other.value, self.precision)
         elif isinstance(other, int):
-            # simple scalar addition
             return QInt(self.value + other, self.precision)
         else:
             raise QIntTypeError(other)
@@ -70,7 +69,6 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, other.precision)
             return QInt(self.value - other.value, self.precision)
         elif isinstance(other, int):
-            # simple scalar subtraction
             return QInt(self.value - other, self.precision)
         else:
             raise QIntTypeError(other)
@@ -84,7 +82,6 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, other.precision)
             return QInt(self.value * other.value, self.precision)
         elif isinstance(other, Number):
-            # simple scalar multiplication
             return QInt(ut.int_mul(self.value, other), self.precision)
         else:
             raise QIntTypeError(other)
@@ -98,7 +95,6 @@ class QInt(NamedTuple):
                 raise QIntPrecisionError(self.precision, other.precision)
             return QInt(ut.int_div(self.value, other.value), self.precision)
         elif isinstance(other, Number):
-            # simple scalar division
             return QInt(ut.int_div(self.value, other), self.precision)
         else:
             raise QIntTypeError(other)
@@ -113,14 +109,22 @@ class QInt(NamedTuple):
             floored_value = ut.int_floordiv(self.value, other.value, self.precision)
             return QInt(floored_value, 0)
         elif isinstance(other, Number):
-            # simple scalar floor division
             floored_value = ut.int_floordiv(self.value, other, self.precision)
             return QInt(floored_value, 0)
         else:
             raise QIntTypeError(other)
 
-    def __mod__(self, _: Self | Number) -> Self:
-        raise TypeError("Modulo is not supported for instances of QInt")
+    def __mod__(self, other: Self | Number) -> Self:
+        if isinstance(other, QInt):
+            if self.precision != other.precision:
+                raise QIntPrecisionError(self.precision, other.precision)
+            mod_value = ut.int_mod(self.value, other.value, self.precision)
+            return QInt(mod_value, self.precision)
+        elif isinstance(other, Number):
+            mod_value = ut.int_mod(self.value, other, self.precision)
+            return QInt(mod_value, self.precision)
+        else:
+            raise QIntTypeError(other)
 
     def __pow__(self, _: Self | Number) -> Self:
         raise TypeError("Exponentiation is not supported for instances of QInt")
