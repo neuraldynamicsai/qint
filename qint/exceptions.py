@@ -19,10 +19,11 @@ class QIntPrecisionError(ValueError):
 class QIntTypeError(TypeError):
     """Exception raised for errors in the type matching of QInt objects."""
 
-    def __init__(self, obj: Any):
+    def __init__(self, obj: Any, operation: str):
         self.obj = obj
+        self.operation = operation
 
-        message = f"Cannot perform operations on QInt with {type(obj)}"
+        message = f"Cannot perform {operation} operations on QInt with {type(obj)}"
 
         super().__init__(message)
 
