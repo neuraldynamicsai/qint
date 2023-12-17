@@ -106,8 +106,18 @@ class QInt(NamedTuple):
     def __itruediv__(self, _: Self | Number) -> Self:
         raise QIntMutationError()
 
-    def __floordiv__(self, _: Self | Number) -> Self:
-        raise TypeError("Floor division is not supported for instances of QInt")
+    def __floordiv__(self, other: Self | Number) -> Self:
+        if isinstance(other, QInt):
+            if self.precision != other.precision:
+                raise QIntPrecisionError(self.precision, other.precision)
+            floored_value = ut.int_floordiv(self.value, other.value, self.precision)
+            return QInt(floored_value, 0)
+        elif isinstance(other, Number):
+            # simple scalar floor division
+            floored_value = ut.int_floordiv(self.value, other, self.precision)
+            return QInt(floored_value, 0)
+        else:
+            raise QIntTypeError(other)
 
     def __mod__(self, _: Self | Number) -> Self:
         raise TypeError("Modulo is not supported for instances of QInt")
