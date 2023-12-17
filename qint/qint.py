@@ -10,8 +10,36 @@ def check_qint(method):
     def wrapper(self, other):
         if not isinstance(other, QInt):
             raise QIntTypeError(other)
+
         if self.precision != other.precision:
             raise QIntPrecisionError(self.precision, other.precision)
+
+        return method(self, other)
+
+    return wrapper
+
+
+def check_qint_or_number(method):
+    def wrapper(self, other):
+        if not isinstance(other, QInt) and not isinstance(other, Number):
+            raise QIntTypeError(other)
+
+        if isinstance(other, QInt) and self.precision != other.precision:
+            raise QIntPrecisionError(self.precision, other.precision)
+
+        return method(self, other)
+
+    return wrapper
+
+
+def check_qint_or_int(method):
+    def wrapper(self, other):
+        if not isinstance(other, QInt) and not isinstance(other, int):
+            raise QIntTypeError(other)
+
+        if isinstance(other, QInt) and self.precision != other.precision:
+            raise QIntPrecisionError(self.precision, other.precision)
+
         return method(self, other)
 
     return wrapper
@@ -59,86 +87,78 @@ class QInt(NamedTuple):
         """Create a QInt from a float with a given precision"""
         if not isinstance(value, Number):
             raise ValueError(f"Value must be a number, not {type(value)}")
+
         return cls(ut.quantize(value, precision), precision)
 
+    @check_qint_or_int
     def __add__(self, other: Self | int) -> Self:
         if isinstance(other, QInt):
-            if self.precision != other.precision:
-                raise QIntPrecisionError(self.precision, other.precision)
-            return QInt(self.value + other.value, self.precision)
-        elif isinstance(other, int):
-            return QInt(self.value + other, self.precision)
+            value = self.value + other.value
         else:
-            raise QIntTypeError(other)
+            value = self.value + other
+
+        return QInt(value, self.precision)
+
+    @check_qint_or_int
+    def __sub__(self, other: Self | int) -> Self:
+        if isinstance(other, QInt):
+            value = self.value - other.value
+        else:
+            value = self.value - other
+
+        return QInt(value, self.precision)
+
+    @check_qint_or_number
+    def __mul__(self, other: Self | Number) -> Self:
+        if isinstance(other, QInt):
+            value = self.value * other.value
+        else:
+            value = ut.int_mul(self.value, other)
+
+        return QInt(value, self.precision)
+
+    @check_qint_or_number
+    def __truediv__(self, other: Self | Number) -> Self:
+        if isinstance(other, QInt):
+            value = ut.int_div(self.value, other.value)
+        else:
+            value = ut.int_div(self.value, other)
+
+        return QInt(value, self.precision)
+
+    @check_qint_or_number
+    def __floordiv__(self, other: Self | Number) -> Self:
+        if isinstance(other, QInt):
+            value = ut.int_floordiv(self.value, other.value, self.precision)
+        else:
+            value = ut.int_floordiv(self.value, other, self.precision)
+
+        return QInt(value, 0)
+
+    @check_qint_or_number
+    def __mod__(self, other: Self | Number) -> Self:
+        if isinstance(other, QInt):
+            value = ut.int_mod(self.value, other.value, self.precision)
+        else:
+            value = ut.int_mod(self.value, other, self.precision)
+
+        return QInt(value, self.precision)
+
+    @check_qint_or_number
+    def __pow__(self, _: Self | Number) -> Self:
+        raise TypeError("Exponentiation is not supported for instances of QInt")
 
     def __iadd__(self, _: Self | int) -> Self:
         raise QIntMutationError()
 
-    def __sub__(self, other: Self | int) -> Self:
-        if isinstance(other, QInt):
-            if self.precision != other.precision:
-                raise QIntPrecisionError(self.precision, other.precision)
-            return QInt(self.value - other.value, self.precision)
-        elif isinstance(other, int):
-            return QInt(self.value - other, self.precision)
-        else:
-            raise QIntTypeError(other)
-
     def __isub__(self, _: Self | int) -> Self:
         raise QIntMutationError()
-
-    def __mul__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            if self.precision != other.precision:
-                raise QIntPrecisionError(self.precision, other.precision)
-            return QInt(self.value * other.value, self.precision)
-        elif isinstance(other, Number):
-            return QInt(ut.int_mul(self.value, other), self.precision)
-        else:
-            raise QIntTypeError(other)
 
     def __imul__(self, _: Self | Number) -> Self:
         raise QIntMutationError()
 
-    def __truediv__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            if self.precision != other.precision:
-                raise QIntPrecisionError(self.precision, other.precision)
-            return QInt(ut.int_div(self.value, other.value), self.precision)
-        elif isinstance(other, Number):
-            return QInt(ut.int_div(self.value, other), self.precision)
-        else:
-            raise QIntTypeError(other)
-
     def __itruediv__(self, _: Self | Number) -> Self:
         raise QIntMutationError()
-
-    def __floordiv__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            if self.precision != other.precision:
-                raise QIntPrecisionError(self.precision, other.precision)
-            floored_value = ut.int_floordiv(self.value, other.value, self.precision)
-            return QInt(floored_value, 0)
-        elif isinstance(other, Number):
-            floored_value = ut.int_floordiv(self.value, other, self.precision)
-            return QInt(floored_value, 0)
-        else:
-            raise QIntTypeError(other)
-
-    def __mod__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            if self.precision != other.precision:
-                raise QIntPrecisionError(self.precision, other.precision)
-            mod_value = ut.int_mod(self.value, other.value, self.precision)
-            return QInt(mod_value, self.precision)
-        elif isinstance(other, Number):
-            mod_value = ut.int_mod(self.value, other, self.precision)
-            return QInt(mod_value, self.precision)
-        else:
-            raise QIntTypeError(other)
-
-    def __pow__(self, _: Self | Number) -> Self:
-        raise TypeError("Exponentiation is not supported for instances of QInt")
 
     def __and__(self, _: Self | Number) -> Self:
         raise TypeError("Bitwise AND is not supported for instances of QInt")
@@ -165,25 +185,25 @@ class QInt(NamedTuple):
         return QInt(abs(self.value), self.precision)
 
     @check_qint
-    def __eq__(self, __value: Self) -> bool:
-        return self.value == __value.value
+    def __eq__(self, __obj: Self) -> bool:
+        return self.value == __obj.value
 
     @check_qint
-    def __ne__(self, __value: Self) -> bool:
-        return self.value != __value.value
+    def __ne__(self, __obj: Self) -> bool:
+        return self.value != __obj.value
 
     @check_qint
-    def __gt__(self, __value: Self) -> bool:
-        return self.value > __value.value
+    def __gt__(self, __obj: Self) -> bool:
+        return self.value > __obj.value
 
     @check_qint
-    def __ge__(self, __value: Self) -> bool:
-        return self.value >= __value.value
+    def __ge__(self, __obj: Self) -> bool:
+        return self.value >= __obj.value
 
     @check_qint
-    def __lt__(self, __value: Self) -> bool:
-        return self.value < __value.value
+    def __lt__(self, __obj: Self) -> bool:
+        return self.value < __obj.value
 
     @check_qint
-    def __le__(self, __value: Self) -> bool:
-        return self.value <= __value.value
+    def __le__(self, __obj: Self) -> bool:
+        return self.value <= __obj.value
