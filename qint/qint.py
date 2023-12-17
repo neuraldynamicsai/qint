@@ -90,59 +90,37 @@ class QInt(NamedTuple):
 
         return cls(ut.quantize(value, precision), precision)
 
+    def __other(self, other: Self | Number) -> int:
+        return (
+            other.value
+            if isinstance(other, QInt)
+            else ut.quantize(other, self.precision)
+        )
+
     @check_qint_or_int
     def __add__(self, other: Self | int) -> Self:
-        if isinstance(other, QInt):
-            value = self.value + other.value
-        else:
-            value = self.value + other
-
-        return QInt(value, self.precision)
+        return QInt(self.value + self.__other(other), self.precision)
 
     @check_qint_or_int
     def __sub__(self, other: Self | int) -> Self:
-        if isinstance(other, QInt):
-            value = self.value - other.value
-        else:
-            value = self.value - other
-
-        return QInt(value, self.precision)
+        return QInt(self.value - self.__other(other), self.precision)
 
     @check_qint_or_number
     def __mul__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            value = self.value * other.value
-        else:
-            value = ut.int_mul(self.value, other)
-
-        return QInt(value, self.precision)
+        return QInt(self.value * self.__other(other), self.precision)
 
     @check_qint_or_number
     def __truediv__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            value = ut.int_div(self.value, other.value)
-        else:
-            value = ut.int_div(self.value, other)
-
-        return QInt(value, self.precision)
+        return QInt(self.value // self.__other(other), self.precision)
 
     @check_qint_or_number
     def __floordiv__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            value = ut.int_floordiv(self.value, other.value, self.precision)
-        else:
-            value = ut.int_floordiv(self.value, other, self.precision)
-
+        value = self.value // self.__other(other) // (10**self.precision)
         return QInt(value, 0)
 
     @check_qint_or_number
     def __mod__(self, other: Self | Number) -> Self:
-        if isinstance(other, QInt):
-            value = ut.int_mod(self.value, other.value, self.precision)
-        else:
-            value = ut.int_mod(self.value, other, self.precision)
-
-        return QInt(value, self.precision)
+        return QInt(self.value % self.__other(other), self.precision)
 
     @check_qint_or_number
     def __pow__(self, _: Self | Number) -> Self:
