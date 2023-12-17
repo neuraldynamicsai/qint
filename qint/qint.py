@@ -45,6 +45,16 @@ def check_qint_or_int(method):
     return wrapper
 
 
+def check_int(method):
+    def wrapper(self, other):
+        if not isinstance(other, int):
+            raise QIntTypeError(other)
+
+        return method(self, other)
+
+    return wrapper
+
+
 @total_ordering
 class QInt(NamedTuple):
     """
@@ -107,7 +117,8 @@ class QInt(NamedTuple):
 
     @check_qint_or_number
     def __mul__(self, other: Self | Number) -> Self:
-        return QInt(self.value * self.__other(other), self.precision)
+        value = self.value * self.__other(other) // ((10**self.precision) ** 2)
+        return QInt(value, self.precision)
 
     @check_qint_or_number
     def __truediv__(self, other: Self | Number) -> Self:
@@ -122,9 +133,20 @@ class QInt(NamedTuple):
     def __mod__(self, other: Self | Number) -> Self:
         return QInt(self.value % self.__other(other), self.precision)
 
-    @check_qint_or_number
-    def __pow__(self, _: Self | Number) -> Self:
-        raise TypeError("Exponentiation is not supported for instances of QInt")
+    @check_int
+    def __pow__(self, other: int) -> Self:
+        """
+        The exponentiation of quantized integers is a known problem in advanced
+        mathematics. There are basically two options:
+        1. only allow integer exponents so that scaling does not get out of
+        control.
+        2. allow for any exponent, but then we must rely on floating point math
+        and lose true quantization.
+
+        We choose option 1 here.
+        """
+        value = self.value**other // (10**self.precision)
+        return QInt(value, self.precision)
 
     def __iadd__(self, _: Self | int) -> Self:
         raise QIntMutationError()
