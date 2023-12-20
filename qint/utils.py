@@ -27,3 +27,17 @@ def quantize(x: Number, precision: int) -> int:
 def unquantize(x: int, precision: int) -> float:
     """Unquantize a number to a given precision."""
     return float(x * 10**-precision)
+
+
+@check_arguments([(int, "numerator"), (int, "denominator")])
+def banker_division(numerator: int, denominator: int) -> int:
+    """Perform banker's rounding on a division operation."""
+    d_numerator = numerator * 2
+    d_denominator = denominator * 2
+    quotient = d_numerator // d_denominator
+    remainder = abs(d_numerator % d_denominator)
+    return (
+        quotient + (quotient % 2)
+        if remainder == denominator
+        else quotient + (remainder > denominator)
+    )

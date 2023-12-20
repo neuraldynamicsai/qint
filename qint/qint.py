@@ -1,9 +1,10 @@
 from typing import NamedTuple, Self
+from fractions import Fraction
 from functools import total_ordering
 
 import qint.utils as ut
 from .utils import Number
-from .exceptions import QIntPrecisionError, QIntTypeError, QIntMutationError
+from .exceptions import QIntPrecisionError, QIntTypeError
 
 
 def check_operand(valid_types: tuple[type, ...], operation: str):
@@ -60,7 +61,7 @@ class QInt(NamedTuple):
     precision: int
 
     @property
-    def out(self) -> float:
+    def tv(self) -> float:
         """True unquantized value"""
         return ut.unquantize(self.value, self.precision)
 
@@ -88,21 +89,28 @@ class QInt(NamedTuple):
         return QInt(self.value - self.__quantize(other), self.precision)
 
     @check_operand((Number,), "multiplication")
-    def __mul__(self, other: Self | Number) -> Self:
-        value = self.value * self.__quantize(other) // ((10**self.precision) ** 2)
+    def __mul__(self, other: Self | int | Fraction) -> Self:
+        if isinstance(other, Fraction):
+            return self.__truediv__(Fraction(other.denominator, other.numerator))
+
+        value = self.value * self.__quantize(other) // (10**self.precision)
         return QInt(value, self.precision)
 
     @check_operand((Number,), "division")
-    def __truediv__(self, other: Self | Number) -> Self:
-        return QInt(self.value // self.__quantize(other), self.precision)
+    def __truediv__(self, other: Self | int | Fraction) -> Self:
+        if isinstance(other, Fraction):
+            value = ut.banker_division(self.value * other.denominator, other.numerator)
+        else:
+            value = ut.banker_division(self.value, self.__quantize(other))
+        return QInt(value, self.precision)
 
     @check_operand((Number,), "floor division")
-    def __floordiv__(self, other: Self | Number) -> Self:
-        value = self.value // self.__quantize(other) // (10**self.precision)
+    def __floordiv__(self, other: Self | int | Fraction) -> Self:
+        value = self.__truediv__(other) // (10**self.precision)
         return QInt(value, 0)
 
     @check_operand((Number,), "modulo")
-    def __mod__(self, other: Self | Number) -> Self:
+    def __mod__(self, other: Self | int) -> Self:
         return QInt(self.value % self.__quantize(other), self.precision)
 
     @check_operand((int,), "exponentiation")
@@ -123,17 +131,17 @@ class QInt(NamedTuple):
         value = self.value**other // (10**self.precision)
         return QInt(value, self.precision)
 
-    def __iadd__(self, _: Self | int) -> Self:
-        raise QIntMutationError()
+    def __iadd__(self, other: Self | int) -> Self:
+        return self.__add__(other)
 
-    def __isub__(self, _: Self | int) -> Self:
-        raise QIntMutationError()
+    def __isub__(self, other: Self | int) -> Self:
+        return self.__sub__(other)
 
-    def __imul__(self, _: Self | Number) -> Self:
-        raise QIntMutationError()
+    def __imul__(self, other: Self | int | Fraction) -> Self:
+        return self.__mul__(other)
 
-    def __itruediv__(self, _: Self | Number) -> Self:
-        raise QIntMutationError()
+    def __itruediv__(self, other: Self | int | Fraction) -> Self:
+        return self.__truediv__(other)
 
     def __and__(self, _: Self | Number) -> Self:
         raise TypeError("Bitwise AND is not supported for instances of QInt")
