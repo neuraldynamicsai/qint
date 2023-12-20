@@ -92,7 +92,7 @@ class QInt(NamedTuple):
     def __sub__(self, other: Self | int) -> Self:
         return QInt(self.value - self.__quantize(other), self.precision)
 
-    @check_operand((Number,), "multiplication")
+    @check_operand((int, Fraction), "multiplication")
     def __mul__(self, other: Self | int | Fraction) -> Self:
         if isinstance(other, Fraction):
             return self.__truediv__(Fraction(other.denominator, other.numerator))
@@ -100,21 +100,24 @@ class QInt(NamedTuple):
         value = self.value * self.__quantize(other) // (10**self.precision)
         return QInt(value, self.precision)
 
-    @check_operand((Number,), "division")
+    @check_operand((int, Fraction), "division")
     def __truediv__(self, other: Self | int | Fraction) -> Self:
         if isinstance(other, Fraction):
             value = ut.banker_division(self.value * other.denominator, other.numerator)
         else:
-            value = ut.banker_division(self.value, self.__quantize(other))
-        return QInt(value * (10**self.precision), self.precision)
+            value = ut.banker_division(
+                self.value,
+                other.value if isinstance(other, QInt) else other,
+            )
+        return QInt(value, self.precision)
 
-    @check_operand((Number,), "floor division")
+    @check_operand((int, Fraction), "floor division")
     def __floordiv__(self, other: Self | int | Fraction) -> Self:
         q = self.__truediv__(other)
         value = q.value // (10**self.precision)
         return QInt(value, 0)
 
-    @check_operand((Number,), "modulo")
+    @check_operand((int,), "modulo")
     def __mod__(self, other: Self | int) -> Self:
         return QInt(self.value % self.__quantize(other), self.precision)
 

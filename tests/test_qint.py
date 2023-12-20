@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 import pytest
 
 from qint.qint import QInt
@@ -45,7 +47,7 @@ class TestQIntAddition:
         q1 = QInt(123, 2)
         q2 = QInt(456, 3)
         with pytest.raises(ValueError):
-            q3 = q1 + q2
+            return q1 + q2
 
     def test_addition_inplace(self):
         q1 = QInt(123, 2)
@@ -96,6 +98,12 @@ class TestQIntMultiplication:
         assert q1.value == 56088
         assert q1.precision == 2
 
+    def test_multiplication_fraction(self):
+        q1 = QInt(246, 2)
+        q2 = q1 * Fraction(1, 2)
+        assert q2.value == 123
+        assert q2.precision == 2
+
 
 class TestQIntDivision:
     def test_truedivision(self):
@@ -117,6 +125,12 @@ class TestQIntDivision:
         assert q1.value == 1600
         assert q1.precision == 2
 
+    def test_truedivision_fraction(self):
+        q1 = QInt(123, 2)
+        q2 = q1 / Fraction(1, 2)
+        assert q2.value == 246
+        assert q2.precision == 2
+
     def test_floordivision(self):
         q1 = QInt(123, 2)
         q2 = QInt(456, 2)
@@ -127,7 +141,7 @@ class TestQIntDivision:
     def test_floordivision_scalar(self):
         q1 = QInt(6300, 2)
         q2 = q1 // 4
-        assert q2.value == 16
+        assert q2.value == 15
         assert q2.precision == 0
 
     def test_floordivision_inplace(self):
