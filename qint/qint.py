@@ -1,6 +1,7 @@
+from __future__ import annotations
 from typing import NamedTuple, Self
 from fractions import Fraction
-from functools import total_ordering
+from functools import total_ordering, wraps
 
 import qint.utils as ut
 from .utils import Number
@@ -14,6 +15,7 @@ def check_operand(valid_types: tuple[type, ...], operation: str):
     """
 
     def decorator(method):
+        @wraps(method)
         def wrapper(self, other):
             if not isinstance(other, (QInt, *valid_types)):
                 raise QIntTypeError(other, operation)
@@ -22,6 +24,38 @@ def check_operand(valid_types: tuple[type, ...], operation: str):
                 raise QIntPrecisionError(self.precision, other.precision)
 
             return method(self, other)
+
+        return wrapper
+
+    return decorator
+
+
+def scale_safe(operation: str):
+    """
+    Scale a QInt to a given precision. This is useful when we want to perform
+    operations on QInts with different precisions. We scale both QInts to the
+    same precision, perform the operation, and then scale the result back to the
+    original precision.
+    """
+
+    def decorator(method):
+        @wraps(method)
+        def wrapper(self, other):
+            if not isinstance(other, QInt):
+                raise QIntTypeError(other, operation)
+
+            max_precision = max(self.precision, other.precision)
+
+            def scale(q: QInt) -> QInt:
+                precision_difference = max_precision - q.precision
+
+                if precision_difference == 0:
+                    return q  # Precision stays the same
+
+                scaled_value = int(round(q.value * (10**precision_difference)))
+                return QInt(scaled_value, max_precision)
+
+            return method(scale(self), scale(other))
 
         return wrapper
 
@@ -88,9 +122,17 @@ class QInt(NamedTuple):
     def __add__(self, other: Self | int) -> Self:
         return QInt(self.value + self.__quantize(other), self.precision)
 
+    @scale_safe("addition")
+    def add(self, other: Self) -> Self:
+        return self.__add__(other)
+
     @check_operand((int,), "subtraction")
     def __sub__(self, other: Self | int) -> Self:
         return QInt(self.value - self.__quantize(other), self.precision)
+
+    @scale_safe("subtraction")
+    def sub(self, other: Self) -> Self:
+        return self.__sub__(other)
 
     @check_operand((int, Fraction), "multiplication")
     def __mul__(self, other: Self | int | Fraction) -> Self:
@@ -100,16 +142,25 @@ class QInt(NamedTuple):
         value = self.value * self.__quantize(other) // (10**self.precision)
         return QInt(value, self.precision)
 
+    @scale_safe("multiplication")
+    def mul(self, other: Self) -> Self:
+        return self.__mul__(other)
+
     @check_operand((int, Fraction), "division")
     def __truediv__(self, other: Self | int | Fraction) -> Self:
         if isinstance(other, Fraction):
             value = ut.banker_division(self.value * other.denominator, other.numerator)
-        else:
-            value = ut.banker_division(
-                self.value,
-                other.value if isinstance(other, QInt) else other,
+        elif isinstance(other, QInt):
+            value = ut.banker_division(self.value, other.value) * (
+                10**other.precision
             )
+        else:
+            value = ut.banker_division(self.value, other)
         return QInt(value, self.precision)
+
+    @scale_safe("division")
+    def div(self, other: Self) -> Self:
+        return self.__truediv__(other)
 
     @check_operand((int, Fraction), "floor division")
     def __floordiv__(self, other: Self | int | Fraction) -> Self:

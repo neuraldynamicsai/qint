@@ -186,3 +186,33 @@ class TestQIntOtherOperations:
         assert q2 > q1
         assert q1 <= q3
         assert q1 >= q3
+
+
+class TestQIntScaledOperations:
+    def test_addition(self):
+        q1 = QInt(1230, 3)
+        q2 = QInt(456, 2)
+        q3 = q1.add(q2)
+        assert q3.value == 5790
+        assert q3.precision == 3
+
+    def test_subtraction(self):
+        q1 = QInt(456, 2)
+        q2 = QInt(1230, 3)
+        q3 = q1.sub(q2)
+        assert q3.value == 3330
+        assert q3.precision == 3
+
+    def test_multiplication(self):
+        q1 = QInt(200, 2)
+        q2 = QInt(4000, 3)
+        q3 = q1.mul(q2)
+        assert q3.value == 8000
+        assert q3.precision == 3
+
+    def test_division(self):
+        q1 = QInt(400, 2)
+        q2 = QInt(2000, 3)
+        q3 = q1.div(q2)
+        assert q3.value == 2000
+        assert q3.precision == 3
