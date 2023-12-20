@@ -106,11 +106,12 @@ class QInt(NamedTuple):
             value = ut.banker_division(self.value * other.denominator, other.numerator)
         else:
             value = ut.banker_division(self.value, self.__quantize(other))
-        return QInt(value, self.precision)
+        return QInt(value * (10**self.precision), self.precision)
 
     @check_operand((Number,), "floor division")
     def __floordiv__(self, other: Self | int | Fraction) -> Self:
-        value = self.__truediv__(other) // (10**self.precision)
+        q = self.__truediv__(other)
+        value = q.value // (10**self.precision)
         return QInt(value, 0)
 
     @check_operand((Number,), "modulo")
