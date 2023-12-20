@@ -60,14 +60,12 @@ class QInt(NamedTuple):
     value: int
     precision: int
 
-    @property
-    def tv(self) -> float:
-        """True unquantized value"""
-        return ut.unquantize(self.value, self.precision)
-
     @classmethod
     def create(cls, value: Number, precision: int) -> Self:
-        """Create a QInt from a float with a given precision"""
+        """
+        Create a QInt from a float with a given precision. Use this when the
+        value we are passing in is NOT already quantized.
+        """
         if not isinstance(value, Number):
             raise ValueError(f"Value must be a Number, not {type(value)}")
 
@@ -79,6 +77,12 @@ class QInt(NamedTuple):
             if isinstance(other, QInt)
             else ut.quantize(other, self.precision)
         )
+
+    def __float__(self) -> float:
+        return ut.unquantize(self.value, self.precision)
+
+    def __int__(self) -> int:
+        return int(round(self.__float__()))
 
     @check_operand((int,), "addition")
     def __add__(self, other: Self | int) -> Self:
