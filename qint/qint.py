@@ -16,7 +16,7 @@ def check_operand(valid_types: tuple[type, ...], operation: str):
 
     def decorator(method):
         @wraps(method)
-        def wrapper(self, other):
+        def wrapper(self: "QInt", other):
             if not isinstance(other, (QInt, *valid_types)):
                 raise QIntTypeError(other, operation)
 
@@ -40,7 +40,7 @@ def scale_safe(operation: str):
 
     def decorator(method):
         @wraps(method)
-        def wrapper(self, other):
+        def wrapper(self: "QInt", other):
             if not isinstance(other, QInt):
                 raise QIntTypeError(other, operation)
 
