@@ -41,3 +41,12 @@ def banker_division(numerator: int, denominator: int) -> int:
         if remainder == denominator
         else quotient + (remainder > denominator)
     )
+
+
+@check_arguments([(int, "x"), (int, "delta")])
+def scale(x: int, delta: int) -> int:
+    """Change the precision of an integer by the specified amount."""
+    if delta > 0:
+        return x * 10**delta
+    if delta < 0:
+        return banker_division(x, 10 ** abs(delta))
