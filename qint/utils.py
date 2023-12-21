@@ -48,5 +48,7 @@ def scale(x: int, delta: int) -> int:
     """Change the precision of an integer by the specified amount."""
     if delta > 0:
         return x * 10**delta
-    if delta < 0:
+    elif delta < 0:
         return banker_division(x, 10 ** abs(delta))
+    else:
+        return x
