@@ -76,6 +76,9 @@ class QInt(NamedTuple):
 
     QInts are immutable.
 
+    Unless otherwise specified, Operations that result in fractional values
+    will be rounded to the nearest integer using banker's rounding (round half even).
+
     :param value: quantized value
     :param precision: precision of the quantized value
     """
