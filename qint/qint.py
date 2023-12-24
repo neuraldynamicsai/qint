@@ -13,7 +13,9 @@ Scalar = int | Fraction
 Method = Callable[[T, T | Scalar], T]
 
 
-def check_operand(valid_types: Optional[Tuple[type, ...]] = None) -> Method:
+def check_operand(
+    valid_types: Optional[Tuple[type, ...]] = None, include_self: bool = True
+) -> Method:
     """
     Decorator for checking the type of the operand in QInt operations. The
     operand must be of one of the types in `valid_types`. If `valid_types` is
@@ -21,6 +23,8 @@ def check_operand(valid_types: Optional[Tuple[type, ...]] = None) -> Method:
 
     :param valid_types: A tuple of types that are valid for the operation, or None to
         default to QInt only.
+    :param include_self: Whether to include the type of the QInt instance itself in
+        the valid types.
     :return: A callable that takes a QInt instance and an operand.
     """
 
@@ -30,7 +34,8 @@ def check_operand(valid_types: Optional[Tuple[type, ...]] = None) -> Method:
     def decorator(method: Method) -> Method:
         @wraps(method)
         def wrapper(self: T, other: T | Scalar, *args, **kwargs) -> T:
-            if not isinstance(other, (type(self), *valid_types)):
+            _types = (type(self), *valid_types) if include_self else valid_types
+            if not isinstance(other, _types):
                 operation = method.__name__
                 raise QIntTypeError(other, operation)
             return method(self, other, *args, **kwargs)
@@ -194,6 +199,7 @@ class QInt(NamedTuple):
         mod_value = self.value % other.value
         return QInt(mod_value, self.precision)
 
+    @check_operand((int,), include_self=False)
     def __pow__(self, other: int) -> Self:
         """
         The exponentiation of quantized integers is a known problem in advanced
@@ -205,10 +211,7 @@ class QInt(NamedTuple):
 
         We choose option 1 here.
         """
-        if isinstance(other, QInt):
-            raise TypeError("Cannot exponentiate QInt with QInt")
-        elif isinstance(other, int):
-            return QInt(self.value**other, self.precision * other)
+        return QInt(self.value**other, self.precision * other)
 
     def __iadd__(self, other: Self | int) -> Self:
         return self.__add__(other)
