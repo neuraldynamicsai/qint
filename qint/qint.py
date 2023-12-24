@@ -1,5 +1,4 @@
-from __future__ import annotations
-from typing import NamedTuple, Self
+from typing import NamedTuple, Self, Optional
 from fractions import Fraction
 from functools import total_ordering, wraps
 
@@ -52,7 +51,7 @@ def scale_safe(operation: str):
                 if precision_difference == 0:
                     return q  # Precision stays the same
 
-                scaled_value = int(round(q.value * (10**precision_difference)))
+                scaled_value = ut.scale(q.value, precision_difference)
                 return QInt(scaled_value, max_precision)
 
             return method(scale(self), scale(other))
@@ -75,18 +74,6 @@ class QInt(NamedTuple):
 
     QInts are immutable.
 
-    Examples:
-    >>> QInt(123, 2)
-    QInt(value=123, precision=2)
-    >>> QInt.from_float(1.23, 2) # create from float
-    QInt(value=123, precision=2)
-    >>> QInt(123, 2) + QInt(456, 2) # add two QInts
-    QInt(value=579, preision=2)
-    >>> QInt(123, 2) + 456 # add QInt with scalar
-    QInt(value=579, precision=2)
-    >>> QInt(123, 2) + QInt(456, 3) # cannot add QInts with different precision
-    ValueError: Cannot add QInt with precision 2 with QInt with precision 3
-
     :param value: quantized value
     :param precision: precision of the quantized value
     """
@@ -105,12 +92,15 @@ class QInt(NamedTuple):
 
         return cls(ut.quantize(value, precision), precision)
 
-    def __quantize(self, other: Self | Number) -> int:
-        return (
-            other.value
-            if isinstance(other, QInt)
-            else ut.quantize(other, self.precision)
-        )
+    def scale(self, targ: int) -> Self:
+        """
+        Scale the precision of the QInt to the given target.
+        """
+        if targ is None or targ == self.precision:
+            return self
+
+        value = ut.scale(self.value, targ - self.precision)
+        return QInt(value, targ)
 
     def __float__(self) -> float:
         return ut.unquantize(self.value, self.precision)
@@ -118,61 +108,73 @@ class QInt(NamedTuple):
     def __int__(self) -> int:
         return int(round(self.__float__()))
 
-    @check_operand((int,), "addition")
     def __add__(self, other: Self | int) -> Self:
-        return QInt(self.value + self.__quantize(other), self.precision)
+        if isinstance(other, QInt):
+            return QInt(self.value + other.value, self.precision)
+        else:
+            return QInt(self.value + other, self.precision)
 
-    @scale_safe("addition")
-    def add(self, other: Self) -> Self:
-        return self.__add__(other)
+    def add(self, other: Self, targ: Optional[int] = None) -> Self:
+        return self.__add__(other).scale(targ)
 
-    @check_operand((int,), "subtraction")
     def __sub__(self, other: Self | int) -> Self:
-        return QInt(self.value - self.__quantize(other), self.precision)
+        if isinstance(other, QInt):
+            return QInt(self.value - other.value, self.precision)
+        else:
+            return QInt(self.value - other, self.precision)
 
-    @scale_safe("subtraction")
-    def sub(self, other: Self) -> Self:
-        return self.__sub__(other)
+    def sub(self, other: Self, targ: Optional[int] = None) -> Self:
+        return self.__sub__(other).scale(targ)
 
-    @check_operand((int, Fraction), "multiplication")
     def __mul__(self, other: Self | int | Fraction) -> Self:
-        if isinstance(other, Fraction):
-            return self.__truediv__(Fraction(other.denominator, other.numerator))
+        if isinstance(other, QInt):
+            return QInt(self.value * other.value, self.precision + other.precision)
+        elif isinstance(other, Fraction):
+            value = ut.banker_division(self.value * other.numerator, other.denominator)
+            return QInt(value, self.precision)
+        else:
+            return QInt(self.value * other, self.precision)
 
-        value = self.value * self.__quantize(other) // (10**self.precision)
-        return QInt(value, self.precision)
+    def mul(self, other: Self, targ: int) -> Self:
+        return self.__mul__(other).scale(targ)
 
-    @scale_safe("multiplication")
-    def mul(self, other: Self) -> Self:
-        return self.__mul__(other)
-
-    @check_operand((int, Fraction), "division")
     def __truediv__(self, other: Self | int | Fraction) -> Self:
-        if isinstance(other, Fraction):
+        if isinstance(other, QInt):
+            value = ut.banker_division(self.value, other.value)
+            return QInt(value, self.precision - other.precision)
+        elif isinstance(other, Fraction):
             value = ut.banker_division(self.value * other.denominator, other.numerator)
-        elif isinstance(other, QInt):
-            value = ut.banker_division(self.value, other.value) * (
-                10**other.precision
-            )
+            return QInt(value, self.precision)
         else:
             value = ut.banker_division(self.value, other)
-        return QInt(value, self.precision)
+            return QInt(value, self.precision)
 
-    @scale_safe("division")
-    def div(self, other: Self) -> Self:
-        return self.__truediv__(other)
+    def div(self, other: Self, targ: Optional[int] = None) -> Self:
+        # for div we scale upfront to avoid precision loss
+        div_prec = other.precision + targ if targ is not None else None
+        return self.scale(div_prec).__truediv__(other)
 
-    @check_operand((int, Fraction), "floor division")
     def __floordiv__(self, other: Self | int | Fraction) -> Self:
-        q = self.__truediv__(other)
-        value = q.value // (10**self.precision)
-        return QInt(value, 0)
+        if isinstance(other, QInt):
+            value = self.value // other.value
+            return QInt(value, self.precision - other.precision)
+        elif isinstance(other, Fraction):
+            value = (self.value * other.denominator) // other.numerator
+            return QInt(value, self.precision)
+        else:
+            value = self.value // other
+            return QInt(value, self.precision)
 
-    @check_operand((int,), "modulo")
     def __mod__(self, other: Self | int) -> Self:
-        return QInt(self.value % self.__quantize(other), self.precision)
+        if isinstance(other, QInt):
+            if self.precision != other.precision:
+                raise ValueError(
+                    "Modulo operation requires same precision for both QInts"
+                )
 
-    @check_operand((int,), "exponentiation")
+            mod_value = self.value % other.value
+            return QInt(mod_value, self.precision)
+
     def __pow__(self, other: int) -> Self:
         """
         The exponentiation of quantized integers is a known problem in advanced
@@ -186,9 +188,8 @@ class QInt(NamedTuple):
         """
         if isinstance(other, QInt):
             raise TypeError("Cannot exponentiate QInt with QInt")
-
-        value = self.value**other // (10**self.precision)
-        return QInt(value, self.precision)
+        elif isinstance(other, int):
+            return QInt(self.value**other, self.precision * other)
 
     def __iadd__(self, other: Self | int) -> Self:
         return self.__add__(other)
@@ -226,26 +227,20 @@ class QInt(NamedTuple):
     def __abs__(self) -> Self:
         return QInt(abs(self.value), self.precision)
 
-    @check_operand((), "comparison")
     def __eq__(self, __obj: Self) -> bool:
         return self.value == __obj.value
 
-    @check_operand((), "comparison")
     def __ne__(self, __obj: Self) -> bool:
         return self.value != __obj.value
 
-    @check_operand((), "comparison")
     def __gt__(self, __obj: Self) -> bool:
         return self.value > __obj.value
 
-    @check_operand((), "comparison")
     def __ge__(self, __obj: Self) -> bool:
         return self.value >= __obj.value
 
-    @check_operand((), "comparison")
     def __lt__(self, __obj: Self) -> bool:
         return self.value < __obj.value
 
-    @check_operand((), "comparison")
     def __le__(self, __obj: Self) -> bool:
         return self.value <= __obj.value
