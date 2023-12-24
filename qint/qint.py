@@ -1,10 +1,12 @@
-from typing import NamedTuple, Self, Optional
+from decimal import Decimal
 from fractions import Fraction
 from functools import total_ordering, wraps
+from typing import NamedTuple, Optional, Self
 
 import qint.utils as ut
-from .utils import Number
+
 from .exceptions import QIntPrecisionError, QIntTypeError
+from .utils import Number
 
 
 def check_operand(valid_types: tuple[type, ...], operation: str):
@@ -101,6 +103,18 @@ class QInt(NamedTuple):
 
         value = ut.scale(self.value, targ - self.precision)
         return QInt(value, targ)
+
+    def to_fraction(self) -> Fraction:
+        """
+        Convert the QInt instance to a Fraction object.
+        """
+        return Fraction(self.value, 10**self.precision)
+
+    def to_decimal(self) -> Decimal:
+        """
+        Convert the QInt instance to a Decimal object without loss of precision.
+        """
+        return Decimal(self.value) / Decimal(10**self.precision)
 
     def __float__(self) -> float:
         return ut.unquantize(self.value, self.precision)
