@@ -199,6 +199,13 @@ class QInt(NamedTuple):
 
     @check_operand()
     def mul(self, other: Self, targ: int) -> Self:
+        """
+        Multiply two QInts together and scale the result to the given target precision.
+
+        :param other: The other QInt to multiply.
+        :param targ: The target precision. If None, the precision of the result will
+            be the sum of the precisions of the two operands.
+        """
         return self.__mul__(other).scale(targ)
 
     @check_operand((Scalar,))
@@ -215,6 +222,13 @@ class QInt(NamedTuple):
 
     @check_operand()
     def div(self, other: Self, targ: Optional[int] = None) -> Self:
+        """
+        Divide two QInts together and scale the result to the given target precision.
+
+        :param other: The other QInt to divide.
+        :param targ: The target precision. If None, the precision of the result will
+            be the difference of the precisions of the two operands.
+        """
         # for div we scale upfront to avoid precision loss
         div_prec = other.precision + targ if targ is not None else None
         return self.scale(div_prec).__truediv__(other)
