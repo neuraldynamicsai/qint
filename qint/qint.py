@@ -85,9 +85,9 @@ class QInt(NamedTuple):
     precision: int
 
     @classmethod
-    def create(cls, value: Rational_Number, precision: int) -> Self:
+    def create(cls, value: Rational_Number | str, precision: int) -> Self:
         """
-        Create a QInt from a float with a given precision. Use this when the
+        Create a QInt from a rational number with a given precision. Use this when the
         value we are passing in is NOT already quantized.
 
         NOTE: Creating QInts from floats may result in inexact quantization at extreme
@@ -104,6 +104,8 @@ class QInt(NamedTuple):
             return cls._from_decimal(value, precision)
         elif isinstance(value, Fraction):
             return cls._from_fraction(value, precision)
+        elif isinstance(value, str):
+            return cls._from_str(value, precision)
         else:
             raise TypeError(f"Cannot create QInt from {type(value)}")
 
@@ -173,7 +175,7 @@ class QInt(NamedTuple):
     @check_operand()
     def sub(self, other: Self, targ: Optional[int] = None) -> Self:
         """
-        Add two QInts together and scale the result to the given target precision.
+        Subtract `other` QInt from this QInt and scale the result to the given target
 
         :param other: The other QInt to subtract.
         :param targ: The target precision. If None, the precision of the result will
@@ -350,3 +352,7 @@ class QInt(NamedTuple):
         scaled_numerator = ut.scale(value.numerator, precision)
         value = ut.banker_division(scaled_numerator, value.denominator)
         return cls(value, precision)
+
+    @classmethod
+    def _from_str(cls, value: str, precision: int) -> Self:
+        return cls._from_decimal(Decimal(value), precision)
