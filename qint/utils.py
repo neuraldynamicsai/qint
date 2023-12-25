@@ -1,4 +1,9 @@
+from decimal import Decimal
+from fractions import Fraction
+
 Number = float | int
+Rational_Number = Number | Fraction | Decimal
+Scalar = int | Fraction
 
 
 def check_arguments(types: list[tuple[type, str]]):

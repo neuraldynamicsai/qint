@@ -6,10 +6,10 @@ from typing import Callable, NamedTuple, Optional, Self, Tuple, TypeVar
 import qint.utils as ut
 
 from .exceptions import QIntPrecisionError, QIntTypeError
-from .utils import Number
+from .utils import Number, Rational_Number, Scalar
+from warnings import warn
 
 T = TypeVar("T", bound="QInt")
-Scalar = int | Fraction
 Method = Callable[[T, T | Scalar], T]
 
 
@@ -70,8 +70,6 @@ class QInt(NamedTuple):
     integer, but the true value is calculated by dividing the integer by
     10^precision. This allows for exact arithmetic on the quantized integers.
 
-    NOTE: You can access the true value via the `true_value` property.
-
     QInts are comparable to other QInts with the same precision.
 
     QInts are immutable.
@@ -87,15 +85,21 @@ class QInt(NamedTuple):
     precision: int
 
     @classmethod
-    def create(cls, value: Number, precision: int) -> Self:
+    def create(cls, value: Rational_Number, precision: int) -> Self:
         """
         Create a QInt from a float with a given precision. Use this when the
         value we are passing in is NOT already quantized.
         """
-        if not isinstance(value, Number):
-            raise ValueError(f"Value must be a Number, not {type(value)}")
-
-        return cls(ut.quantize(value, precision), precision)
+        if isinstance(value, int):
+            return cls._from_int(value, precision)
+        elif isinstance(value, float):
+            return cls._from_float(value, precision)
+        elif isinstance(value, Decimal):
+            return cls._from_decimal(value, precision)
+        elif isinstance(value, Fraction):
+            return cls._from_fraction(value, precision)
+        else:
+            raise TypeError(f"Cannot create QInt from {type(value)}")
 
     def scale(self, targ: int) -> Self:
         """
@@ -278,3 +282,23 @@ class QInt(NamedTuple):
     @require_same_precision
     def __le__(self, __obj: Self) -> bool:
         return self.value <= __obj.value
+
+    @classmethod
+    def _from_int(cls, value: int, precision: int) -> Self:
+        return cls(ut.quantize(value, precision), precision)
+
+    @classmethod
+    def _from_float(cls, value: float, precision: int) -> Self:
+        warn("Creating QInt from float may result in inexact quantization.")
+        return cls(ut.quantize(value, precision), precision)
+
+    @classmethod
+    def _from_decimal(cls, value: Decimal, precision: int) -> Self:
+        num, denom = value.as_integer_ratio()
+        return cls._from_fraction(Fraction(num, denom), precision)
+
+    @classmethod
+    def _from_fraction(cls, value: Fraction, precision: int) -> Self:
+        scaled_numerator = ut.scale(value.numerator, precision)
+        value = ut.banker_division(scaled_numerator, value.denominator)
+        return cls(value, precision)
