@@ -2,12 +2,12 @@ from decimal import Decimal
 from fractions import Fraction
 from functools import wraps
 from typing import Callable, NamedTuple, Optional, Self, Tuple, TypeVar
+from warnings import warn
 
 import qint.utils as ut
 
 from .exceptions import QIntPrecisionError, QIntTypeError
 from .utils import Number, Rational_Number, Scalar
-from warnings import warn
 
 T = TypeVar("T", bound="QInt")
 Method = Callable[[T, T | Scalar], T]
