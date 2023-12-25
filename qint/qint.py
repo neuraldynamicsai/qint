@@ -89,6 +89,12 @@ class QInt(NamedTuple):
         """
         Create a QInt from a float with a given precision. Use this when the
         value we are passing in is NOT already quantized.
+
+        NOTE: Creating QInts from floats may result in inexact quantization at extreme
+        precision levels.
+
+        :param value: The value to quantize. Can be a float, int, Fraction, or Decimal.
+        :param precision: The precision to quantize to.
         """
         if isinstance(value, int):
             return cls._from_int(value, precision)
@@ -104,6 +110,8 @@ class QInt(NamedTuple):
     def scale(self, targ: int) -> Self:
         """
         Scale the precision of the QInt to the given target.
+
+        :param targ: The target precision.
         """
         if targ is None or targ == self.precision:
             return self
@@ -139,7 +147,20 @@ class QInt(NamedTuple):
 
     @check_operand()
     def add(self, other: Self, targ: Optional[int] = None) -> Self:
-        return self.__add__(other).scale(targ)
+        """
+        Add two QInts together and scale the result to the given target precision.
+
+        :param other: The other QInt to add.
+        :param targ: The target precision. If None, the precision of the result will
+            be the maximum of the precisions of the two operands.
+        """
+        if targ is None:
+            targ = max(self.precision, other.precision)
+
+        if other.precision == self.precision:
+            return self.__add__(other).scale(targ)
+        else:
+            return self.scale(targ).__add__(other.scale(targ))
 
     @check_operand((int,))
     @require_same_precision
@@ -151,7 +172,20 @@ class QInt(NamedTuple):
 
     @check_operand()
     def sub(self, other: Self, targ: Optional[int] = None) -> Self:
-        return self.__sub__(other).scale(targ)
+        """
+        Add two QInts together and scale the result to the given target precision.
+
+        :param other: The other QInt to subtract.
+        :param targ: The target precision. If None, the precision of the result will
+            be the maximum of the precisions of the two operands.
+        """
+        if targ is None:
+            targ = max(self.precision, other.precision)
+
+        if other.precision == self.precision:
+            return self.__sub__(other).scale(targ)
+        else:
+            return self.scale(targ).__sub__(other.scale(targ))
 
     @check_operand((Scalar,))
     def __mul__(self, other: Self | Scalar) -> Self:
