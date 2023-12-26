@@ -200,7 +200,7 @@ class QInt(NamedTuple):
             return QInt(self.value * other, self.precision)
 
     @check_operand()
-    def mul(self, other: Self, targ: int) -> Self:
+    def mul(self, other: Self, targ: Optional[int] = None) -> Self:
         """
         Multiply two QInts together and scale the result to the given target precision.
 
@@ -208,6 +208,9 @@ class QInt(NamedTuple):
         :param targ: The target precision. If None, the precision of the result will
             be the sum of the precisions of the two operands.
         """
+        if targ is None:
+            targ = self.precision + other.precision
+
         return self.__mul__(other).scale(targ)
 
     @check_operand((Scalar,))
