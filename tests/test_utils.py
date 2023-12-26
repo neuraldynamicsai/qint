@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from qint.utils import quantize, unquantize, banker_division
+from qint.utils import quantize, unquantize, banker_division, scale
 
 
 class TestQuantize:
@@ -65,3 +65,33 @@ class TestBankerDivision:
     def test_division_by_zero(self):
         with pytest.raises(ZeroDivisionError):
             banker_division(5, 0)
+
+
+class TestScale:
+    def test_positive_values(self):
+        assert scale(123, 2) == 12300
+        assert scale(3456, 3) == 3456000
+        assert scale(1234, 4) == 12340000
+
+    def test_negative_values(self):
+        assert scale(-123, 2) == -12300
+        assert scale(-3456, 3) == -3456000
+        assert scale(-1234, 4) == -12340000
+
+    def test_zero(self):
+        assert scale(0, 2) == 0
+
+    def test_positive_delta(self):
+        assert scale(123, 2) == 12300
+        assert scale(3456, 3) == 3456000
+        assert scale(1234, 4) == 12340000
+
+    def test_negative_delta(self):
+        assert scale(12300, -2) == 123
+        assert scale(3456000, -3) == 3456
+        assert scale(12340000, -4) == 1234
+
+    def test_zero_delta(self):
+        assert scale(123, 0) == 123
+        assert scale(3456, 0) == 3456
+        assert scale(1234, 0) == 1234
