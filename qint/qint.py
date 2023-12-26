@@ -115,6 +115,9 @@ class QInt(NamedTuple):
 
         :param targ: The target precision.
         """
+        if not isinstance(targ, int):
+            raise TypeError(f"Target precision must be an integer, got {type(targ)}")
+
         if targ is None or targ == self.precision:
             return self
 
