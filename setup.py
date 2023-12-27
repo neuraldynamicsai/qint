@@ -14,4 +14,5 @@ setup(
     packages=find_packages(),
     install_requires=[],
     license="MIT",
+    project_urls={"GitHub": "https://github.com/neuraldynamicsai/qint"},
 )
